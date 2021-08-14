@@ -17,8 +17,8 @@ stages{
 
         steps {
 
-			sh 'mvn --version'
-			sh 'docker version'
+			//sh 'mvn --version'
+			//sh 'docker version'
 			echo "PATH 	$PATH"
 			echo "bulid number - $env.BUILD_NUMBER"
          
