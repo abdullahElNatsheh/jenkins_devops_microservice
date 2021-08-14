@@ -1,71 +1,85 @@
-//declrative
+//SCRIPTED
 
-pipeline{
+//DECLARATIVE
+pipeline {
+	agent any
+	// agent { docker { image 'maven:3.6.3'} }
+	// agent { docker { image 'node:13.8'} }
+	environment {
+		dockerHome = tool 'myDocker'
+		mavenHome = tool 'myMaven'
+		PATH = "$dockerHome/bin:$mavenHome/bin:$PATH"
+	}
 
-//agent{ docker{ image 'maven:3.6.3'} }
-agent any
+	stages {
+		stage('Checkout') {
+			steps {
+				sh 'mvn --version'
+				sh 'docker version'
+				echo "Build"
+				echo "PATH - $PATH"
+				echo "BUILD_NUMBER - $env.BUILD_NUMBER"
+				echo "BUILD_ID - $env.BUILD_ID"
+				echo "JOB_NAME - $env.JOB_NAME"
+				echo "BUILD_TAG - $env.BUILD_TAG"
+				echo "BUILD_URL - $env.BUILD_URL"
+			}
+		}
+		stage('Compile') {
+			steps {
+				sh "mvn clean compile"
+			}
+		}
 
-environment{
+		stage('Test') {
+			steps {
+				sh "mvn test"
+			}
+		}
 
-	dockerHome = tool 'mydocker'
-    mavenHome = tool  'mymaven'
-	PATH = "$dockerHome/bin:$mavenHome/bin:$PATH"
-}
-stages{
+		stage('Integration Test') {
+			steps {
+				sh "mvn failsafe:integration-test failsafe:verify"
+			}
+		}
 
-    stage('build'){
+		stage('Package') {
+			steps {
+				sh "mvn package -DskipTests"
+			}
+		}
 
-        steps {
+		stage('Build Docker Image') {
+			steps {
+				//"docker build -t in28min/currency-exchange-devops:$env.BUILD_TAG"
+				script {
+					dockerImage = docker.build("in28min/currency-exchange-devops:${env.BUILD_TAG}")
+				}
 
-			//sh 'mvn --version'
-			//sh 'docker version'
-			echo "PATH 	$PATH"
-			echo "bulid number - $env.BUILD_NUMBER"
-         
-         echo "build"
+			}
+		}
 
-        }
-    }
-
-    stage('test'){
-
-        steps {
-
-         echo "test"
-
-        }
-    }
-
-    stage('intergration test'){
-
-        steps {
-         
-         echo "intergration test"
-
-        }
-    }
-}
-
-//post stage actions
-
-post{
-
-    always{
-
-        echo "i run always"
-    }
-
-    success{
-
-        echo "i run in success"
-
-    }
-
-    failure{
-
-        echo "i run in failure"
-    }
-
-}
-
+		stage('Push Docker Image') {
+			steps {
+				script {
+					docker.withRegistry('', 'dockerhub') {
+						dockerImage.push();
+						dockerImage.push('latest');
+					}
+				}
+			}
+		}
+	} 
+	
+	post {
+		always {
+			echo 'Im awesome. I run always'
+		}
+		success {
+			echo 'I run when you are successful'
+		}
+		failure {
+			echo 'I run when you fail'
+		}
+	}
 }
