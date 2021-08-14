@@ -6,8 +6,8 @@ pipeline {
 	// agent { docker { image 'maven:3.6.3'} }
 	// agent { docker { image 'node:13.8'} }
 	environment {
-		dockerHome = tool 'myDocker'
-		mavenHome = tool 'myMaven'
+		dockerHome = tool 'mydocker'
+		mavenHome = tool 'mymaven'
 		PATH = "$dockerHome/bin:$mavenHome/bin:$PATH"
 	}
 
@@ -53,7 +53,7 @@ pipeline {
 			steps {
 				//"docker build -t in28min/currency-exchange-devops:$env.BUILD_TAG"
 				script {
-					dockerImage = docker.build("in28min/currency-exchange-devops:${env.BUILD_TAG}")
+					dockerImage = docker.build("natdocker96/currency-exchange-devops:${env.BUILD_TAG}")
 				}
 
 			}
